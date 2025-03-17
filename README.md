@@ -3,7 +3,7 @@
 groverburger's 3D engine (g3d) simplifies [LÖVE](http://love2d.org)'s 3d capabilities to be as simple to use as possible.<br/>
 View the original forum post [here](https://love2d.org/forums/viewtopic.php?f=5&t=86350).
 
-![pic1](demo.gif)
+![pic1](voxelEngine.jpg)
 
 The entire `main.lua` file for the Earth and Moon demo is under 30 lines, as shown here:
 ```lua
