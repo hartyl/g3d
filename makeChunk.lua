@@ -1,5 +1,8 @@
 local floor=math.floor
 local sqrt = math.sqrt
+local has0,has1
+local function return0() has0=true return 0 end
+local function return1() has1=true return 1 end
 return function (coordinates,chunk,CHUNK_SIZE,toUpdateList,getChunk)
 return function (X,Y,Z)
 	local s = coordinates(X,Y,Z)
@@ -9,6 +12,7 @@ return function (X,Y,Z)
 	local ddd=dd^2
 	local world = chunk[s]
 	local i=1
+	has0,has1 = false,false
 	for z=1,d do
 		for y=1,d do
 			for x=1,d do
@@ -17,11 +21,12 @@ return function (X,Y,Z)
 				(math.sin((x+y+(X+Y)*CHUNK_SIZE)/12)
 				+math.sin((-x+y+(-X+Y)*CHUNK_SIZE)/12))*6))
 				
-				>0 and 1 or 0
+				>0 and return1() or return0()
 				i=i+1
 			end
 		end
 	end
+	if not has0 and not has1 then chunk[s] = nil return end
 	world.x={}
 	world.X={}
 	world.y={}

@@ -3,7 +3,8 @@
 local bit = require 'bit'
 local packBits = require 'packBits'
 local g3d = require "g3d"
-local CHUNK_SIZE = 32
+local CHUNK_SIZE = 4
+local size = 6
 local tI = table.insert
 local floor = math.floor
 love.graphics.setMeshCullMode("back")
@@ -13,6 +14,19 @@ local FPS = 0
 local chunk={}
 local c
 local camera = g3d.camera
+
+local bitsPerD = math.log(CHUNK_SIZE,2)
+local coorPos = 31-bitsPerD*3
+local features = love.graphics.getSupported()
+local face
+if features.glsl3 then
+	face = love.graphics.newShader("face3.vert","face.frag")
+else
+	coorPos = bit.lshift(1,coorPos)
+	face = love.graphics.newShader("face.vert","face.frag")
+end
+face:send('CHUNK_SIZE',CHUNK_SIZE)
+face:send('bitsPerDs',coorPos)
 
 Lol = {}
 Lal = {}
@@ -54,18 +68,13 @@ local function checkWorld(x,y,z,X,Y,Z)
 		if X==camera.position[1] and Y == camera.position[2] and Z == camera.position[3] then
 			Lil[1] = table.concat({x,y,z,},",")
 		end
-		if not chnk then return 0 end
+		if not chnk then return 1 end
 		local l=d3dToLine(x,y,z)
 		assert(chnk[l],table.concat({x,y,z,l},","))
 	end
 	return chnk[d3dToLine(x,y,z)]
 end
 
-local face = love.graphics.newShader("face.vert","face.frag")
-face:send('CHUNK_SIZE',CHUNK_SIZE)
-local bitsPerD = math.log(CHUNK_SIZE,2)
-local coorPos = bit.lshift(1,31-bitsPerD*3)
-face:send('bitsPerDs',coorPos)
 local faces = 0
 local updateChunk,drawChunk = require'chunk'(CHUNK_SIZE,d3dToLine,checkWorld,packBits,bit.lshift,tI,g3d,31-bitsPerD*3)
 
@@ -74,7 +83,6 @@ local function getChunk(x,y,z)
 end
 local makeChunk=require'makeChunk'(coordinates,chunk,CHUNK_SIZE,toUpdateList,getChunk)
 
-local size = 10
 for x=-size,size do
 	for y=-size,size do
 		for z=-1,0 do
@@ -142,10 +150,13 @@ function love.update(dt)
 	if m>=0 then
 		local p = {unpack(g3d.camera.position)}
 		for i=1,1 do
-			setBlock(getOrMakeChunk(unpack(p)),m,unpack(p))
-			p[1]=p[1]+floor(math.random(-1,1)+0.5)*CHUNK_SIZE*i/8-(g3d.camera.position[1]-p[1])/5
-			p[2]=p[2]+floor(math.random(-1,1)+0.5)*CHUNK_SIZE*i/8-(g3d.camera.position[2]-p[2])/5
-			p[3]=p[3]+CHUNK_SIZE
+			local ch = getOrMakeChunk(unpack(p))
+			if ch then
+				setBlock(ch,m,unpack(p))
+				p[1]=p[1]+floor(math.random(-1,1)+0.5)*CHUNK_SIZE*i/8-(g3d.camera.position[1]-p[1])/5
+				p[2]=p[2]+floor(math.random(-1,1)+0.5)*CHUNK_SIZE*i/8-(g3d.camera.position[2]-p[2])/5
+				p[3]=p[3]+CHUNK_SIZE
+			end
 		end
 	end
 	Lal[1]=0
