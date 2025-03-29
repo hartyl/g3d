@@ -1,70 +1,66 @@
-local floor=math.floor
-local sqrt = math.sqrt
-local has0,has1
-local function return0() has0=true return 0 end
-local function return1() has1=true return 1 end
-return function (coordinates,chunk,CHUNK_SIZE,toUpdateList,getChunk)
+local bit = require'bit'
+local lshift = bit.lshift
+local rshift = bit.rshift
+local band = bit.band
+local bor = bit.bor
+return function (coordinates,chunk,d,toUpdateList)
 return function (X,Y,Z)
 	local s = coordinates(X,Y,Z)
 	chunk[s]={}
-	local d=CHUNK_SIZE
-	local dd=d/2
-	local ddd=dd^2
+	-- local dd=d/2
 	local world = chunk[s]
-	local i=1
-	has0,has1 = false,false
-	for z=1,d do
-		for y=1,d do
-			for x=1,d do
-				world[i] = dd-sqrt((x-dd)^2+(y-dd)^2+(z-dd)^2)+
-				-(Z*CHUNK_SIZE+z-(
-				(math.sin((x+y+(X+Y)*CHUNK_SIZE)/12)
-				+math.sin((-x+y+(-X+Y)*CHUNK_SIZE)/12))*6))
-				
-				>0 and return1() or return0()
+	local i=0
+	world.totalBlocks = 0
+	for x=0,rshift(d^3,5) do
+		world[x]=0
+	end
+	for _=0,((d-1)*rshift(d,5)-1)*3 do
+		world[_] = bit.bnot(0)
+		i = i+32
+	end
+	---[[
+	for z=4,d-1 do
+		for y=0,d-1 do
+			for x=0,d-1 do
+				if z>15 then goto cancel end
+				local k=
+				-- dd-sqrt((x-dd)^2+(y-dd)^2+(z-dd)^2)+
+				-(Z*d-7+z-1-(
+				(math.sin((x+y-2+(X+Y)*d)*0.15)
+				+math.sin((-x+y-2+(-X+Y)*d)*0.15))*3))
+				>0 and 1 or 0
+				local _i=rshift(i,5)
+				world[_i] = bor(world[_i], lshift(k,band(i,31)))
+				world.totalBlocks=world.totalBlocks+k
 				i=i+1
 			end
 		end
 	end
-	if not has0 and not has1 then chunk[s] = nil return end
-	world.x={}
-	world.X={}
-	world.y={}
-	world.Y={}
-	world.z={}
-	world.Z={}
-	local t={0}
-	for i=1,d^3 do
-		world.x[i]=t
-		world.X[i]=t
-		world.y[i]=t
-		world.Y[i]=t
-		world.z[i]=t
-		world.Z[i]=t
+	::cancel::
+	--]]
+	if world.totalBlocks == 0 then chunk[s] = nil return end
+	local limit = d^1/1
+	local format = {{"InstancePosition", "float", 1}}
+	for _,v in pairs({"x","X","y","Y","z","Z"}) do
+		world[v] = {limit=limit}
+		world["_"..v] = {}
+		world["f"..v] = love.graphics.newMesh(format, limit, nil, "dynamic")
 	end
 
-	local format = {{"InstancePosition", "float", 1}}
-	world.fx = love.graphics.newMesh(format, world.x, nil, "dynamic")
-	world.fX = love.graphics.newMesh(format, world.X, nil, "dynamic")
-	world.fy = love.graphics.newMesh(format, world.y, nil, "dynamic")
-	world.fY = love.graphics.newMesh(format, world.Y, nil, "dynamic")
-	world.fz = love.graphics.newMesh(format, world.z, nil, "dynamic")
-	world.fZ = love.graphics.newMesh(format, world.Z, nil, "dynamic")
-	
 	world.p={X,Y,Z}
-	toUpdateList[world]=true
+	toUpdateList[world]=false
 	Lil[1]=0
 	local x,y,z=0,0,0
 	for x=-1,1,2 do
-		toUpdateList[chunk[coordinates(X+x,Y+y,Z+z)] or 0] = true
+		toUpdateList[chunk[coordinates(X+x,Y+y,Z+z)] or 0] = false
 		Lil[1]=Lil[1]+1
 	end
 	for y=-1,1,2 do
-		toUpdateList[chunk[coordinates(X+x,Y+y,Z+z)] or 0] = true
+		toUpdateList[chunk[coordinates(X+x,Y+y,Z+z)] or 0] = false
 		Lil[1]=Lil[1]+1
 	end
 	for z=-1,1,2 do
-		toUpdateList[chunk[coordinates(X+x,Y+y,Z+z)] or 0] = true
+		toUpdateList[chunk[coordinates(X+x,Y+y,Z+z)] or 0] = false
 		Lil[1]=Lil[1]+1
 	end
 	toUpdateList[0]=nil
