@@ -14,18 +14,13 @@ return function (X,Y,Z)
 	for x=0,rshift(d^3,5) do
 		world[x]=0
 	end
-	for _=0,((d-1)*rshift(d,5)-1)*3 do
-		world[_] = bit.bnot(0)
-		i = i+32
-	end
 	---[[
-	for z=4,d-1 do
+	for z=Z*d,math.min(Z*d+d-1,15) do
 		for y=0,d-1 do
 			for x=0,d-1 do
-				if z>15 then goto cancel end
 				local k=
 				-- dd-sqrt((x-dd)^2+(y-dd)^2+(z-dd)^2)+
-				-(Z*d-7+z-1-(
+				-(z-7-1-(
 				(math.sin((x+y-2+(X+Y)*d)*0.15)
 				+math.sin((-x+y-2+(-X+Y)*d)*0.15))*3))
 				>0 and 1 or 0
@@ -36,10 +31,8 @@ return function (X,Y,Z)
 			end
 		end
 	end
-	::cancel::
 	--]]
-	if world.totalBlocks == 0 then chunk[s] = nil return end
-	local limit = d^1/1
+	local limit = 1
 	local format = {{"InstancePosition", "float", 1}}
 	for _,v in pairs({"x","X","y","Y","z","Z"}) do
 		world[v] = {limit=limit}

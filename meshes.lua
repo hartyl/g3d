@@ -25,5 +25,5 @@ return function (g3d)
 	local wallZ = g3d.newModel(cube)
 	wallZ.mesh:setVertexMap({6,8,2,4})
 	wallZ.mesh:setDrawMode('strip')
-	return wallx, wallX, wally, wallY, wallz, wallZ
+	return wallx.mesh, wallX.mesh, wally.mesh, wallY.mesh, wallz.mesh, wallZ.mesh
 end
