@@ -10,6 +10,8 @@ local camera = require(g3d.path .. ".camera")
 local vectorCrossProduct = vectors.crossProduct
 local vectorNormalize = vectors.normalize
 
+local lg = love.graphics
+
 ----------------------------------------------------------------------------------------------------
 -- define a model class
 ----------------------------------------------------------------------------------------------------
@@ -24,8 +26,10 @@ model.vertexFormat = {
     {"VertexTexCoord", "float", 2},
     {"VertexNormal", "float", 3},
     {"VertexColor", "byte", 4},
+    {"groupId", "float", 1},
 }
 model.shader = g3d.shader
+model.instanceShader = g3d.instanceShader
 
 -- this returns a new instance of the model class
 -- a model must be given a .obj file or equivalent lua table, and a texture
@@ -37,19 +41,21 @@ local function newModel(verts, texture, translation, rotation, scale)
     -- if verts is a string, use it as a path to a .obj file
     -- otherwise verts is a table, use it as a model defintion
     if type(verts) == "string" then
-        verts, map = loadObjFile(verts)
+		local spheres
+        verts, map, spheres = loadObjFile(verts)
+		self.spheres = #spheres>0 and spheres or nil
     end
 
     -- if texture is a string, use it as a path to an image file
     -- otherwise texture is already an image, so don't bother
     if type(texture) == "string" then
-        texture = love.graphics.newImage(texture)
+        texture = lg.newImage(texture)
     end
 
     -- initialize my variables
     self.verts = verts
     self.texture = texture
-    self.mesh = love.graphics.newMesh(self.vertexFormat, self.verts, "triangles")
+    self.mesh = lg.newMesh(self.vertexFormat, self.verts, "triangles")
     self.mesh:setTexture(self.texture)
     if map then
         self.mesh:setVertexMap(map)
@@ -79,7 +85,7 @@ function model:makeNormals(isFlipped)
         vp[8], v[8], vn[8] = n_3, n_3, n_3
     end
 
-    self.mesh = love.graphics.newMesh(self.vertexFormat, self.verts, "triangles")
+    self.mesh = lg.newMesh(self.vertexFormat, self.verts, "triangles")
     self.mesh:setTexture(self.texture)
 end
 
@@ -161,15 +167,94 @@ end
 -- draw the model
 function model:draw(shader)
     local shader = shader or self.shader
-    love.graphics.setShader(shader)
+    lg.setShader(shader)
     shader:send("modelMatrix", self.matrix)
+	-- shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
+    lg.draw(self.mesh)
+    lg.setShader()
+end
+
+
+function model:instanciate(positions, notattach)
+	self.instanceMesh = love.graphics.newMesh({{"InstancePosition", "float", 4}}, positions, nil, "dynamic")
+	self.positions = positions
+	if not notattach then
+		self.mesh:attachAttribute("InstancePosition", self.instanceMesh, "perinstance")
+	end
+	return self.instanceMesh
+end
+function model:reinstanciate(mesh)
+	self.instanceMesh = mesh
+	self.mesh:attachAttribute("InstancePosition", mesh, "perinstance")
+end
+
+function model:drawInstanced(shader)
+    local shader = shader or self.shader
+    lg.setShader(shader)
+	local instanceMesh = self.instanceMesh
+	self.mesh:attachAttribute("InstancePosition", instanceMesh, "perinstance")
+    shader:send("modelMatrix", self.matrix)
+	shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
+    lg.drawInstanced(self.mesh,instanceMesh:getVertexCount())--(#self.positions)
+    lg.setShader()
+end
+
+function model:drawBillboard(shader)
+    local shader = shader or self.shader
+    lg.setShader(shader)
+	shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
+    shader:send("translation", self.translation)
+    lg.draw(self.mesh)
+    lg.setShader()
+end
+
+function model:drawBillboardInstanced(shader)
+	local instanceMeshN = self.instanceMesh:getVertexCount()
+    local shader = shader or self.shader
+    lg.setShader(shader)
+	shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
+    shader:send("translation", self.translation)
+    lg.drawInstanced(self.mesh,instanceMeshN)--(#self.positions)
+    lg.setShader()
+end
+function model:drawMultiple(shader, positions)
+    local shader = shader or self.shader
+    lg.setShader(shader)
+	local instanceMesh = love.graphics.newMesh({{"InstancePosition", "float", 3}}, positions, nil, "static")
+	self.mesh:attachAttribute("InstancePosition", instanceMesh, "perinstance")
+    shader:send("modelMatrix", self.matrix)
+    if shader:hasUniform "isCanvasEnabled" then
+        shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
+    end
+    lg.drawInstanced(self.mesh,#positions)
+	instanceMesh:release()
+    lg.setShader()
+end
+
+local function shaderPrepare(shader)
     shader:send("viewMatrix", camera.viewMatrix)
     shader:send("projectionMatrix", camera.projectionMatrix)
-    if shader:hasUniform "isCanvasEnabled" then
-        shader:send("isCanvasEnabled", love.graphics.getCanvas() ~= nil)
-    end
-    love.graphics.draw(self.mesh)
-    love.graphics.setShader()
+end
+g3d.shaderPrepare = shaderPrepare
+function g3d.shaderDepthBillPrepare(shader)
+	local camDir, camPit = camera.getDirectionPitch()
+	local cosPitch = math.cos(camPit)
+	local sinPitch = math.sin(camPit)
+	local ax, ay = -math.sin(camDir), math.cos(camDir)
+	local camFor = {
+		ay*cosPitch,
+		-ax*cosPitch,
+		sinPitch,
+	}
+	local camUp = {
+		ay*sinPitch,
+		-ax*sinPitch,
+		-cosPitch,
+	}
+    shader:send("cameraUp", camUp)
+    shader:send("cameraForward", camFor)
+    shader:send("cameraRight", {ax,ay})
+	shaderPrepare(shader)
 end
 
 -- the fallback function if ffi was not loaded
@@ -213,7 +298,7 @@ if success then
         end
 
         self.mesh:release()
-        self.mesh = love.graphics.newMesh(self.vertexFormat, #self.verts, "triangles")
+        self.mesh = lg.newMesh(self.vertexFormat, #self.verts, "triangles")
         self.mesh:setVertices(data)
         self.mesh:setTexture(self.texture)
         self.verts = nil

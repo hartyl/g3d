@@ -13,6 +13,10 @@ return function (path, uFlip, vFlip)
     local result = {}
     local unique = {}
     local repeated = {}
+	local spheres = {}
+	local currentGroup = nil
+	local groups = {}
+	local groupsId = -1
 
     -- go line by line through the file
     for line in love.filesystem.lines(path) do
@@ -33,6 +37,7 @@ return function (path, uFlip, vFlip)
             for i=2,#words do
                 t[i-1] = tonumber(words[i])
             end
+			t.group = groups[currentGroup] or nil
             table.insert(positions, t)
         elseif firstWord == "vt" then
             -- if the first word in this line is a "vt", then this defines a texture coordinate
@@ -60,18 +65,19 @@ return function (path, uFlip, vFlip)
 				local word = words[i]
                 if not repeated[word] then
                     table.insert( unique, {
-                        v and positions[v][1] or 0,
-                        v and positions[v][2] or 0,
-                        v and positions[v][3] or 0,
-                        vt and uvs[vt][1],
-                        vt and uvs[vt][2],
-                        vn and normals[vn][1],
-                        vn and normals[vn][2],
-                        vn and normals[vn][3],
-                        v and positions[v][4],
-                        v and positions[v][5],
-                        v and positions[v][6],
-                        v and positions[v][7],
+                        v and positions[v][1] or nil,
+                        v and positions[v][2] or nil,
+                        v and positions[v][3] or nil,
+                        vt and uvs[vt][1] or nil,
+                        vt and uvs[vt][2] or nil,
+                        vn and normals[vn][1] or nil,
+                        vn and normals[vn][2] or nil,
+                        vn and normals[vn][3] or nil,
+                        v and positions[v][4] or nil,	--	colors
+                        v and positions[v][5] or nil,
+                        v and positions[v][6] or nil,
+                        v and positions[v][7] or nil,
+                        v and positions[v].group or nil,
                     })
                     repeated[word] = #unique
                 end
@@ -94,9 +100,21 @@ return function (path, uFlip, vFlip)
                     table.insert(result, vertices[i])
                 end
             end
-
+		elseif firstWord == "E" then
+			words[3] = tonumber(words[3])
+			words[4] = tonumber(words[4])
+			words[5] = tonumber(words[5])
+			words[6] = tonumber(words[6])-1
+			table.insert(spheres, {unpack(words,3)})
+		elseif firstWord == "g" then
+			currentGroup = words[2]
+			if not groups[currentGroup] then
+				groupsId = groupsId+1
+				groups[currentGroup] = groupsId
+			end
+		-- more new keywords here
         end
     end
 
-    return unique, result
+    return unique, result, spheres
 end

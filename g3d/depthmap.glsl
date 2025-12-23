@@ -13,7 +13,6 @@ uniform bool isCanvasEnabled;  // detect when this model is being rendered to a 
 
 // the vertex normal attribute must be defined, as it is custom unlike the other attributes
 attribute vec3 VertexNormal;
-attribute vec4 groupId;
 
 // define some varying vectors that are useful for writing custom fragment shaders
 varying vec4 worldPosition;

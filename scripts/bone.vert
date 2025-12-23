@@ -11,9 +11,12 @@ uniform mat4 viewMatrix;       // handled by the camera
 uniform mat4 modelMatrix;      // models send their own model matrices when drawn
 uniform bool isCanvasEnabled;  // detect when this model is being rendered to a canvas
 
+uniform vec4 boneRot[16];
+uniform vec3 bonePos[16];
+
 // the vertex normal attribute must be defined, as it is custom unlike the other attributes
 attribute vec3 VertexNormal;
-attribute vec4 groupId;
+attribute float groupId;
 
 // define some varying vectors that are useful for writing custom fragment shaders
 varying vec4 worldPosition;
@@ -27,6 +30,8 @@ vec4 position(mat4 transformProjection, vec4 vertexPosition) {
     // save each step of the process, as these are often useful when writing custom fragment shaders
     worldPosition = modelMatrix * vertexPosition;
 	worldPosition += vec4(InstancePosition,0);
+	// worldPosition += vec4(0,0,groupId.x,0);
+	worldPosition += vec4(bonePos[int(groupId)],0);
     viewPosition = viewMatrix * worldPosition;
     screenPosition = projectionMatrix * viewPosition;
 

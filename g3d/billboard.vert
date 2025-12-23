@@ -4,30 +4,35 @@
 
 // this vertex shader is what projects 3d vertices in models onto your 2d screen
 
-
-attribute vec3 InstancePosition;
+varying vec2 texCoord;
+attribute vec4 InstancePosition;
 uniform mat4 projectionMatrix; // handled by the camera
 uniform mat4 viewMatrix;       // handled by the camera
-uniform mat4 modelMatrix;      // models send their own model matrices when drawn
+
+uniform vec3 translation;
 uniform bool isCanvasEnabled;  // detect when this model is being rendered to a canvas
 
 // the vertex normal attribute must be defined, as it is custom unlike the other attributes
 attribute vec3 VertexNormal;
-attribute vec4 groupId;
 
 // define some varying vectors that are useful for writing custom fragment shaders
-varying vec4 worldPosition;
+varying vec3 worldPosition;
 varying vec4 viewPosition;
 varying vec4 screenPosition;
 varying vec3 vertexNormal;
 varying vec4 vertexColor;
+// uniform mat4 modelMatrix;      // models send their own model matrices when drawn
 
 vec4 position(mat4 transformProjection, vec4 vertexPosition) {
     // calculate the positions of the transformed coordinates on the screen
     // save each step of the process, as these are often useful when writing custom fragment shaders
-    worldPosition = modelMatrix * vertexPosition;
-	worldPosition += vec4(InstancePosition,0);
-    viewPosition = viewMatrix * worldPosition;
+	// worldPosition += vec4(vertexPosition.x,vertexPosition.y,vertexPosition.z,0);
+	// float cosPitch = sin(cameraRight.z);
+	// vec3 cameraUp = vec3(cameraRight.y*cosPitch,-cameraRight.x*cosPitch,-cos(cameraRight.z));
+	// vec3 cameraForward = -cross(vec3(cameraRight.xy,0), cameraUp);
+    viewPosition = viewMatrix * vec4(InstancePosition.xyz + translation,1);
+	viewPosition.xy += vertexPosition.xy * (InstancePosition.w+1);
+	texCoord = vertexPosition.xy;
     screenPosition = projectionMatrix * viewPosition;
 
     // save some data from this vertex for use in fragment shaders

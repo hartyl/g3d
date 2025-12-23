@@ -74,12 +74,12 @@ function camera.lookInDirection(x,y,z, directionTowards,pitchTowards)
     fpsController.direction = directionTowards or fpsController.direction
     fpsController.pitch = pitchTowards or fpsController.pitch
 
-    -- turn the cos of the pitch into a sign value, either 1, -1, or 0
-    local sign = math.cos(fpsController.pitch)
-    sign = (sign > 0 and 1) or (sign < 0 and -1) or 0
+    -- turn the cos of the pitch into a sign value, either 1, -1
+	local cosPitch = math.cos(fpsController.pitch)
+    local sign = cosPitch < 0 and -1 or 1
 
     -- don't let cosPitch ever hit 0, because weird camera glitches will happen
-    local cosPitch = sign*math.max(math.abs(math.cos(fpsController.pitch)), 0.00001)
+    cosPitch = sign*math.max(math.abs(cosPitch), 0.00001)
 
     -- convert the direction and pitch into a target point
     camera.target[1] = camera.position[1]+math.cos(fpsController.direction)*cosPitch
