@@ -204,7 +204,7 @@ function model:drawInstanced(shader)
 	self.mesh:attachAttribute("InstancePosition", instanceMesh, "perinstance")
     self:updateMatrixTranslation()
     shader:send("modelMatrix", self.matrix)
-	shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
+	-- shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
     lg.drawInstanced(self.mesh,instanceMesh:getVertexCount())--(#self.positions)
     lg.setShader()
 end
@@ -212,7 +212,7 @@ end
 function model:drawBillboard(shader)
     local shader = shader or self.shader
     lg.setShader(shader)
-	shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
+	-- shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
     shader:send("translation", {vectors.add(-camera.position[1], -camera.position[2],-camera.position[3],unpack(self.translation))})
     lg.draw(self.mesh)
     lg.setShader()
@@ -222,7 +222,7 @@ function model:drawBillboardInstanced(shader)
 	local instanceMeshN = self.instanceMesh:getVertexCount()
     local shader = shader or self.shader
     lg.setShader(shader)
-	shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
+	-- shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
     shader:send("translation", {vectors.add(-camera.position[1], -camera.position[2],-camera.position[3],unpack(self.translation))})
     lg.drawInstanced(self.mesh,instanceMeshN)--(#self.positions)
     lg.setShader()
@@ -269,7 +269,7 @@ function g3d.shaderDepthBillPrepare(shader)
 		-ax*sinPitch,
 		-cosPitch,
 	}
-    shader:send("cameraUp", camUp)
+    -- shader:send("cameraUp", {0,0,1})
     -- shader:send("cameraForward", camFor)
     -- shader:send("cameraPos", camera.position)
     -- shader:send("cameraRight", {ax,ay})

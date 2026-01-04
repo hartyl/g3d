@@ -4,17 +4,18 @@
 local lg = love.graphics
 Winw, Winh = lg.getDimensions()
 local rad = 8
-local circle = lg.newCanvas(rad,rad)
+local circle = lg.newCanvas(rad,rad,{format="r8"})
 lg.setCanvas(circle)
 for x=.5,rad+.5 do
 	for y=.5,rad+.5 do
 		-- lg.setColor(1,1,1,)
 		local dist = math.sqrt(x*x+y*y)/rad
-		lg.setColor(1,1,1,math.cos(dist*math.pi/2))
+		lg.setColor(math.cos(dist*math.pi/2),1,1,1)
 		lg.rectangle("fill",x,y,1,1)
 	end
 end
 lg.setColor(1,1,1,1)
+-- lg.rectangle("line",-1,-1,rad+1,rad+1)
 lg.setCanvas()
 circle = lg.newImage(circle:newImageData())
 circle:setWrap("mirroredrepeat","mirroredrepeat")
@@ -22,7 +23,7 @@ local g3d = require "g3d"
 local house = g3d.newModel("assets/house.obj")
 local person = g3d.newModel("assets/microPerson.obj", nil, {0,10,0})
 local person2 = g3d.newModel("assets/littlePerson.obj", nil, {0,0,0})
-local moon = g3d.newModel("assets/circle.obj", circle, {0,10,0}, nil, 0.5)
+local moon = g3d.newModel("assets/dome.obj", circle, {0,10,0}, nil, 0.5)
 local flat = g3d.newModel("assets/plane.obj", circle, {0,0,0}, nil, 0.5)
 local background = g3d.newModel("assets/sphere.obj", "assets/starfield.png", nil, nil, 1000)
 local floor = g3d.newModel("assets/plane.obj", "assets/earth.png", nil, nil, 1000)
@@ -31,13 +32,18 @@ local bill = lg.newShader("g3d/billboard.vert", "g3d/cut.frag")
 bill:send("projectionMatrix", g3d.camera.projectionMatrix)
 local dbill = lg.newShader"g3d/depthboard.glsl"
 dbill:send("projectionMatrix", g3d.camera.projectionMatrix)
+-- moon.shader = lg.newShader("g3d/billboard.vert",[[
 moon.shader = lg.newShader("g3d/depthboard.glsl",[[
 varying vec2 texCoord;
+varying vec3 worldPosition;
+varying vec3 cameraForward;
 vec4 effect( vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords )
 {
     vec4 texcolor = Texel(tex, texCoord);
-	if (texcolor.a < .10)
+	if (texcolor.x < .10)
 		discard;
+	if (worldPosition.z<-.5)
+		return vec4(vec3(.5),1);
     return vec4(1);
 }
 ]] )
@@ -73,13 +79,14 @@ local p2 = person.spheres[2]
 local spheres1 = moon:instanciate(person.spheres, false)
 local spheres2 = moon:instanciate(person2.spheres, false)
 local p = person.spheres[1]
-spheres1:setVertices({{p[1]+4,p[2]+5,p[3]+6,person.spheres[1][4]},{p2[1]+1,p2[2]+2,p2[3]+3,person.spheres[2][4]}})
+spheres1:setVertices({{p[1]+4,p[2]+5,p[3]+6,p[4]*-100},{p2[1]+1,p2[2]+2,p2[3]+3,p2[4]}})
 person.shader:send('bonePos', {1,2,3},{4,5,6})
 
 function love.draw()
 	g3d.shaderPrepare(bill)
 	g3d.shaderDepthBillPrepare(dbill)
 	g3d.shaderPrepare(g3d.shader)
+	-- g3d.shaderPrepare(moon.shader)
 	g3d.shaderDepthBillPrepare(moon.shader)
 	g3d.shaderPrepare(person.shader)
     house:drawInstanced(nil,house.instances)

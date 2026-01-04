@@ -5,7 +5,7 @@
 
 
 attribute vec3 InstancePosition;
-uniform mat4 projectionMatrix; // handled by the camera
+uniform lowp mat4 projectionMatrix; // handled by the camera
 uniform mat3 viewMatrix;       // handled by the camera
 uniform mat4 modelMatrix;      // models send their own model matrices when drawn
 uniform bool isCanvasEnabled;  // detect when this model is being rendered to a canvas

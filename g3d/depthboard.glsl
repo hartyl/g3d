@@ -7,16 +7,16 @@
 #ifdef VERTEX
 varying vec2 texCoord;
 attribute vec4 InstancePosition;
-uniform mat4 projectionMatrix; // handled by the camera
+uniform lowp mat4 projectionMatrix; // handled by the camera
 uniform mat3 viewMatrix;       // handled by the camera
 
-uniform vec3 cameraUp;
+// uniform vec3 cameraUp;
 //uniform vec3 cameraForward;
 // uniform vec3 cameraPos;
 // uniform vec2 cameraRight;
 
 uniform vec3 translation;
-uniform bool isCanvasEnabled;  // detect when this model is being rendered to a canvas
+// uniform bool isCanvasEnabled;  // detect when this model is being rendered to a canvas
 
 // the vertex normal attribute must be defined, as it is custom unlike the other attributes
 attribute vec3 VertexNormal;
@@ -25,8 +25,9 @@ attribute vec3 VertexNormal;
 varying vec3 worldPosition;
 varying vec3 viewPosition;
 varying vec4 screenPosition;
-varying vec3 vertexNormal;
-varying vec4 vertexColor;
+varying vec3 cameraForward;
+// varying vec3 vertexNormal;
+// varying vec4 vertexColor;
 // uniform mat4 modelMatrix;      // models send their own model matrices when drawn
 
 vec4 position(mat4 transformProjection, vec4 vertexPosition) {
@@ -36,26 +37,26 @@ vec4 position(mat4 transformProjection, vec4 vertexPosition) {
 	// float cosPitch = sin(cameraRight.z);
 	// vec3 cameraUp = vec3(cameraRight.y*cosPitch,-cameraRight.x*cosPitch,-cos(cameraRight.z));
 	// vec3 cameraForward = -cross(vec3(cameraRight.xy,0), cameraUp);
-    vec3 cameraForward = normalize(InstancePosition.xyz + translation);
-	vec3 cameraRight = (cross(cameraForward, cameraUp));
-    vec3 worldPosition;
-	worldPosition += cameraUp * vertexPosition.y;
+    cameraForward = normalize(InstancePosition.xyz + translation);
+	vec3 cameraRight = normalize(cross(cameraForward, vec3(0,0,1)));
+	vec3 cameraUp = -cross(cameraForward,cameraRight);
+	worldPosition = cameraUp * vertexPosition.y;
 	worldPosition += cameraRight * vertexPosition.x;
-	// worldPosition += -cameraForward * vertexPosition.z;
-    viewPosition = viewMatrix * (InstancePosition.xyz + translation + worldPosition * (InstancePosition.w+1));
+	worldPosition.xy *= worldPosition.z + 2;
+	// worldPosition = viewMatrix * worldPosition;
+	worldPosition -= cameraForward * vertexPosition.z;
+	viewPosition = viewMatrix * (InstancePosition.xyz + translation + worldPosition * (InstancePosition.w+1));
 	// viewPosition.xy -= vertexPosition.xy * (InstancePosition.w+1);
     screenPosition = projectionMatrix * vec4(viewPosition,1);
+	// texCoord = worldPosition.xy;
 	texCoord = vertexPosition.xy;
 
     // save some data from this vertex for use in fragment shaders
-    vertexNormal = VertexNormal;
-    vertexColor = VertexColor;
+    // vertexNormal = VertexNormal;
+    // vertexColor = VertexColor;
 
     // for some reason models are flipped vertically when rendering to a canvas
     // so we need to detect when this is being rendered to a canvas, and flip it back
-    if (isCanvasEnabled) {
-        screenPosition.y *= -1.0;
-    }
 
     return screenPosition;
 }
