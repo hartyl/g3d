@@ -22,6 +22,7 @@ local camera = {
     projectionMatrix = newMatrix(),
 }
 
+
 -- private variables used only for the first person camera functions
 local fpsController = {
     direction = 0,

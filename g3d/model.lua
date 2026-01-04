@@ -147,7 +147,19 @@ end
 
 -- update the model's transformation matrix
 function model:updateMatrix()
-    self.matrix:setTransformationMatrix(self.translation, self.rotation, self.scale)
+    local p = camera.position
+    self.matrix:setTransformationMatrix(
+        {vectors.add(-p[1], -p[2],-p[3],unpack(self.translation))},
+        self.rotation,
+        self.scale)
+end
+
+-- update model's matrix position
+function model:updateMatrixTranslation()
+    local p = camera.position
+    local m = self.matrix
+    local t = self.translation
+    m[4], m[8], m[12] = t[1]-p[1], t[2]-p[2],t[3]-p[3]
 end
 
 -- align's the model matrix to a given point
@@ -162,16 +174,14 @@ function model:lookAt(target, up)
 end
 
 
-
-
 -- draw the model
 function model:draw(shader)
     local shader = shader or self.shader
     lg.setShader(shader)
+    self:updateMatrixTranslation()
     shader:send("modelMatrix", self.matrix)
 	-- shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
     lg.draw(self.mesh)
-    lg.setShader()
 end
 
 
@@ -193,6 +203,7 @@ function model:drawInstanced(shader)
     lg.setShader(shader)
 	local instanceMesh = self.instanceMesh
 	self.mesh:attachAttribute("InstancePosition", instanceMesh, "perinstance")
+    self:updateMatrixTranslation()
     shader:send("modelMatrix", self.matrix)
 	shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
     lg.drawInstanced(self.mesh,instanceMesh:getVertexCount())--(#self.positions)
@@ -203,7 +214,7 @@ function model:drawBillboard(shader)
     local shader = shader or self.shader
     lg.setShader(shader)
 	shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
-    shader:send("translation", self.translation)
+    shader:send("translation", {vectors.add(-camera.position[1], -camera.position[2],-camera.position[3],unpack(self.translation))})
     lg.draw(self.mesh)
     lg.setShader()
 end
@@ -213,7 +224,7 @@ function model:drawBillboardInstanced(shader)
     local shader = shader or self.shader
     lg.setShader(shader)
 	shader:send("isCanvasEnabled", lg.getCanvas() ~= nil)
-    shader:send("translation", self.translation)
+    shader:send("translation", {vectors.add(-camera.position[1], -camera.position[2],-camera.position[3],unpack(self.translation))})
     lg.drawInstanced(self.mesh,instanceMeshN)--(#self.positions)
     lg.setShader()
 end
@@ -231,9 +242,17 @@ function model:drawMultiple(shader, positions)
     lg.setShader()
 end
 
+-- local prepared = {}
 local function shaderPrepare(shader)
-    shader:send("viewMatrix", camera.viewMatrix)
-    shader:send("projectionMatrix", camera.projectionMatrix)
+    shader:send("viewMatrix", {
+        camera.viewMatrix[1],camera.viewMatrix[2],camera.viewMatrix[3],
+        camera.viewMatrix[5],camera.viewMatrix[6],camera.viewMatrix[7],
+        camera.viewMatrix[9],camera.viewMatrix[10],camera.viewMatrix[11],
+})
+    -- if not prepared[shader] then
+        -- prepared[shader] = true
+        -- shader:send("projectionMatrix", camera.projectionMatrix)
+    -- end
 end
 g3d.shaderPrepare = shaderPrepare
 function g3d.shaderDepthBillPrepare(shader)
@@ -241,19 +260,20 @@ function g3d.shaderDepthBillPrepare(shader)
 	local cosPitch = math.cos(camPit)
 	local sinPitch = math.sin(camPit)
 	local ax, ay = -math.sin(camDir), math.cos(camDir)
-	local camFor = {
-		ay*cosPitch,
-		-ax*cosPitch,
-		sinPitch,
-	}
+    --  local camFor = {
+    --  	ay*cosPitch,
+    --  	-ax*cosPitch,
+    --  	sinPitch,
+    --  }
 	local camUp = {
 		ay*sinPitch,
 		-ax*sinPitch,
 		-cosPitch,
 	}
     shader:send("cameraUp", camUp)
-    shader:send("cameraForward", camFor)
-    shader:send("cameraRight", {ax,ay})
+    -- shader:send("cameraForward", camFor)
+    -- shader:send("cameraPos", camera.position)
+    -- shader:send("cameraRight", {ax,ay})
 	shaderPrepare(shader)
 end
 

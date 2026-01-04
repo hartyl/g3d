@@ -5,13 +5,15 @@
 // this vertex shader is what projects 3d vertices in models onto your 2d screen
 
 #ifdef VERTEX
+varying vec2 texCoord;
 attribute vec4 InstancePosition;
 uniform mat4 projectionMatrix; // handled by the camera
-uniform mat4 viewMatrix;       // handled by the camera
+uniform mat3 viewMatrix;       // handled by the camera
 
 uniform vec3 cameraUp;
-uniform vec3 cameraForward;
-uniform vec2 cameraRight;
+//uniform vec3 cameraForward;
+// uniform vec3 cameraPos;
+// uniform vec2 cameraRight;
 
 uniform vec3 translation;
 uniform bool isCanvasEnabled;  // detect when this model is being rendered to a canvas
@@ -21,7 +23,7 @@ attribute vec3 VertexNormal;
 
 // define some varying vectors that are useful for writing custom fragment shaders
 varying vec3 worldPosition;
-varying vec4 viewPosition;
+varying vec3 viewPosition;
 varying vec4 screenPosition;
 varying vec3 vertexNormal;
 varying vec4 vertexColor;
@@ -34,12 +36,16 @@ vec4 position(mat4 transformProjection, vec4 vertexPosition) {
 	// float cosPitch = sin(cameraRight.z);
 	// vec3 cameraUp = vec3(cameraRight.y*cosPitch,-cameraRight.x*cosPitch,-cos(cameraRight.z));
 	// vec3 cameraForward = -cross(vec3(cameraRight.xy,0), cameraUp);
-	worldPosition = cameraUp * vertexPosition.y;
-	worldPosition.xy += cameraRight * vertexPosition.x;
-	worldPosition += -cameraForward * vertexPosition.z;
-    viewPosition = viewMatrix * vec4(InstancePosition.xyz + translation + worldPosition * (InstancePosition.w+1),1);
+    vec3 cameraForward = normalize(InstancePosition.xyz + translation);
+	vec3 cameraRight = (cross(cameraForward, cameraUp));
+    vec3 worldPosition;
+	worldPosition += cameraUp * vertexPosition.y;
+	worldPosition += cameraRight * vertexPosition.x;
+	// worldPosition += -cameraForward * vertexPosition.z;
+    viewPosition = viewMatrix * (InstancePosition.xyz + translation + worldPosition * (InstancePosition.w+1));
 	// viewPosition.xy -= vertexPosition.xy * (InstancePosition.w+1);
-    screenPosition = projectionMatrix * viewPosition;
+    screenPosition = projectionMatrix * vec4(viewPosition,1);
+	texCoord = vertexPosition.xy;
 
     // save some data from this vertex for use in fragment shaders
     vertexNormal = VertexNormal;

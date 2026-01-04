@@ -23,14 +23,16 @@ local g3d = require "g3d"
 local house = g3d.newModel("assets/house.obj")
 local person = g3d.newModel("assets/microPerson.obj", nil, {0,10,0})
 local person2 = g3d.newModel("assets/littlePerson.obj", nil, {0,0,0})
-local moon = g3d.newModel("assets/plane.obj", circle, {0,10,0}, nil, 0.5)
+local moon = g3d.newModel("assets/circle.obj", circle, {0,10,0}, nil, 0.5)
 local flat = g3d.newModel("assets/plane.obj", circle, {0,0,0}, nil, 0.5)
 local background = g3d.newModel("assets/sphere.obj", "assets/starfield.png", nil, nil, 1000)
 local floor = g3d.newModel("assets/plane.obj", "assets/earth.png", nil, nil, 1000)
 local timer = 0
 local bill = lg.newShader("g3d/billboard.vert", "g3d/cut.frag")
+bill:send("projectionMatrix", g3d.camera.projectionMatrix)
 local dbill = lg.newShader"g3d/depthboard.glsl"
-moon.shader = lg.newShader("g3d/billboard.vert",[[
+dbill:send("projectionMatrix", g3d.camera.projectionMatrix)
+moon.shader = lg.newShader("g3d/depthboard.glsl",[[
 varying vec2 texCoord;
 vec4 effect( vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords )
 {
@@ -40,9 +42,11 @@ vec4 effect( vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords )
     return vec4(1);
 }
 ]] )
+moon.shader:send("projectionMatrix", g3d.camera.projectionMatrix)
 -- house.shader = bill
 person.shader = lg.newShader'scripts/bone.vert'
-person.shader:send('bonePos', {1,2,3},{4,5,6})
+person.shader:send("projectionMatrix", g3d.camera.projectionMatrix)
+g3d.shader:send("projectionMatrix", g3d.camera.projectionMatrix)
 
 function love.update(dt)
     timer = timer + dt
@@ -65,30 +69,36 @@ for y=1,10 do
 end
 
 house:instanciate(house.positions)
---	local spheres1 = moon:instanciate(person.spheres, false)
+-- person.spheres[1]={p[1]+4,p[2]+5,p[3]+6,person.spheres[1][4]}
+local p2 = person.spheres[2]
+local spheres1 = moon:instanciate(person.spheres, false)
 local spheres2 = moon:instanciate(person2.spheres, false)
+local p = person.spheres[1]
+spheres1:setVertices({{p[1]+4,p[2]+5,p[3]+6,person.spheres[1][4]},{p2[1]+1,p2[2]+2,p2[3]+3,person.spheres[2][4]}})
+person.shader:send('bonePos', {1,2,3},{4,5,6})
 
 function love.draw()
-	lg.setMeshCullMode("none")
-	background:setTranslation(unpack(g3d.camera.position))
-	background:draw()
-	lg.setMeshCullMode("back")
 	g3d.shaderPrepare(bill)
 	g3d.shaderDepthBillPrepare(dbill)
 	g3d.shaderPrepare(g3d.shader)
-	g3d.shaderPrepare(moon.shader)
+	g3d.shaderDepthBillPrepare(moon.shader)
 	g3d.shaderPrepare(person.shader)
     house:drawInstanced(nil,house.instances)
     moon:drawBillboard()
 	floor:draw()
 	person:draw()
-	--	moon:reinstanciate(spheres1)
-	--	moon.translation = person.translation
-	--	moon:drawBillboardInstanced()
+	moon:reinstanciate(spheres1)
+	moon.translation = person.translation
+	moon:drawBillboardInstanced()
 	person2:draw()
 	moon:reinstanciate(spheres2)
 	moon.translation = person2.translation
 	moon:drawBillboardInstanced()
+	lg.setMeshCullMode("none")
+	background:setTranslation(unpack(g3d.camera.position))
+	background:draw()
+	lg.setMeshCullMode("back")
+    lg.setShader()
 end
 
 function love.mousemoved(x,y, dx,dy)

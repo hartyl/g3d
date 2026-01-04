@@ -4,7 +4,7 @@
 
 local vectors = require(g3d.path .. ".vectors")
 local vectorCrossProduct = vectors.crossProduct
-local vectorDotProduct = vectors.dotProduct
+-- local vectorDotProduct = vectors.dotProduct
 local vectorNormalize = vectors.normalize
 
 ----------------------------------------------------------------------------------------------------
@@ -38,7 +38,7 @@ end
 -- automatically converts a matrix to a string
 -- for printing to console and debugging
 function matrix:__tostring()
-    return ("%f\t%f\t%f\t%f\n%f\t%f\t%f\t%f\n%f\t%f\t%f\t%f\n%f\t%f\t%f\t%f"):format(unpack(self))
+    return table.concat({unpack(self)}, "\t") -- ("%f\t%f\t%f\t%f\n%f\t%f\t%f\t%f\n%f\t%f\t%f\t%f\n%f\t%f\t%f\t%f"):format(unpack(self))
 end
 
 ----------------------------------------------------------------------------------------------------
@@ -79,7 +79,7 @@ function matrix:setTransformationMatrix(translation, rotation, scale)
     self[9], self[10], self[11] = self[9] * sx, self[10] * sy, self[11] * sz
 
     -- fourth row is not used, just set it to the fourth row of the identity matrix
-    self[13], self[14], self[15], self[16] = 0, 0, 0, 1
+    -- self[13], self[14], self[15], self[16] = 0, 0, 0, 1
 end
 
 function matrix:getScale()
@@ -109,8 +109,8 @@ function matrix:lookAtFrom(pos, target, up, orig_scale)
     local u_x, u_y, u_z = vectorCrossProduct(f_x,f_y,f_z, s_x,s_y,s_z)
 
     self[1], self[2], self[3]   = f_x*sx, s_x*sy, u_x*sz
-    self[5], self[6], self[7]   = f_y*sx, s_y*sy, u_y*sz 
-    self[9], self[10], self[11] = f_z*sx, s_z*sy, u_z*sz 
+    self[5], self[6], self[7]   = f_y*sx, s_y*sy, u_y*sz
+    self[9], self[10], self[11] = f_z*sx, s_z*sy, u_z*sz
 end
 
 ----------------------------------------------------------------------------------------------------
@@ -154,12 +154,14 @@ end
 function matrix:setViewMatrix(eye, target, up)
     local z1, z2, z3 = vectorNormalize(eye[1] - target[1], eye[2] - target[2], eye[3] - target[3])
     local x1, x2, x3 = vectorNormalize(vectorCrossProduct(up[1], up[2], up[3], z1, z2, z3))
-    local y1, y2, y3 = vectorCrossProduct(z1, z2, z3, x1, x2, x3)
+    self[1],  self[2],  self[3] = x1, x2, x3
+    self[5],  self[6],  self[7] = vectorCrossProduct(z1, z2, z3, x1, x2, x3)
+    self[9],  self[10], self[11]= z1, z2, z3
 
-    self[1],  self[2],  self[3],  self[4]  = x1, x2, x3, -1*vectorDotProduct(x1, x2, x3, eye[1], eye[2], eye[3])
-    self[5],  self[6],  self[7],  self[8]  = y1, y2, y3, -1*vectorDotProduct(y1, y2, y3, eye[1], eye[2], eye[3])
-    self[9],  self[10], self[11], self[12] = z1, z2, z3, -1*vectorDotProduct(z1, z2, z3, eye[1], eye[2], eye[3])
-    self[13], self[14], self[15], self[16] = 0, 0, 0, 1
+    -- self[1],  self[2],  self[3],  self[4]  = x1, x2, x3, 0 -- -vectorDotProduct(x1, x2, x3, eye[1], eye[2], eye[3])
+    -- self[5],  self[6],  self[7],  self[8]  = y1, y2, y3, 0 -- -vectorDotProduct(y1, y2, y3, eye[1], eye[2], eye[3])
+    -- self[9],  self[10], self[11], self[12] = z1, z2, z3, 0 -- -vectorDotProduct(z1, z2, z3, eye[1], eye[2], eye[3])
+    -- self[13], self[14], self[15], self[16] = 0, 0, 0, 1
 end
 
 return newMatrix
