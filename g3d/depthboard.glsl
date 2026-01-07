@@ -42,7 +42,7 @@ vec4 position(mat4 transformProjection, vec4 vertexPosition) {
 	vec3 cameraUp = -cross(cameraForward,cameraRight);
 	worldPosition = cameraUp * vertexPosition.y;
 	worldPosition += cameraRight * vertexPosition.x;
-	worldPosition.xy *= worldPosition.z + 2;
+	// worldPosition.xy *= worldPosition.z + 2;
 	// worldPosition = viewMatrix * worldPosition;
 	worldPosition -= cameraForward * vertexPosition.z;
 	viewPosition = viewMatrix * (InstancePosition.xyz + translation + worldPosition * (InstancePosition.w+1));

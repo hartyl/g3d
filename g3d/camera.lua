@@ -10,8 +10,8 @@ local g3d = g3d -- save a reference to g3d in case the user makes it non-global
 
 local camera = {
     fov = math.pi/2,
-    nearClip = 0.01,
-    farClip = 1000,
+    nearClip = 0.1,
+    farClip = 2000,
     aspectRatio = love.graphics.getWidth()/love.graphics.getHeight(),
     position = {0,0,0},
     target = {1,0,0},
@@ -19,6 +19,7 @@ local camera = {
 
     viewMatrix = newMatrix(),
     projectionMatrix = newMatrix(),
+    speed = 9,
 }
 
 
@@ -107,20 +108,18 @@ end
 
 -- simple first person camera movement with WASD
 -- put this local function in your love.update to use, passing in dt
+local lki = love.keyboard.isDown
 function camera.firstPersonMovement(dt)
     -- collect inputs
-    local moveX, moveY = 0, 0
     local cameraMoved = false
-    local speed = 9
-    if love.keyboard.isDown "w" then moveX = moveX + 1 end
-    if love.keyboard.isDown "a" then moveY = moveY + 1 end
-    if love.keyboard.isDown "s" then moveX = moveX - 1 end
-    if love.keyboard.isDown "d" then moveY = moveY - 1 end
-    if love.keyboard.isDown "space" then
+    local speed = camera.speed * (lki 'lctrl' and 90 or 1)
+    local moveX = (lki "w" and 1 or 0) + (lki "s" and -1 or 0)
+    local moveY = (lki "a" and 1 or 0) + (lki "d" and -1 or 0)
+    if lki "space" then
         camera.position[3] = camera.position[3] + speed*dt
         cameraMoved = true
     end
-    if love.keyboard.isDown "lshift" then
+    if lki "lshift" then
         camera.position[3] = camera.position[3] - speed*dt
         cameraMoved = true
     end

@@ -103,7 +103,7 @@ return function (path, uFlip, vFlip)
 			words[3] = tonumber(words[3])
 			words[4] = tonumber(words[4])
 			words[5] = tonumber(words[5])
-			words[6] = tonumber(words[6])-1+1/32
+			words[6] = tonumber(words[6])-1
             spheres[words[2]]={unpack(words,3)}
             table.insert(spheres, spheres[words[2]])
 		elseif firstWord == "g" then

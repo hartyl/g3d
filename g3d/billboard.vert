@@ -19,6 +19,7 @@ attribute vec3 VertexNormal;
 varying vec3 worldPosition;
 varying vec3 viewPosition;
 varying vec4 screenPosition;
+varying vec3 cameraForward;
 // varying vec3 vertexNormal;
 // varying vec4 vertexColor;
 // uniform mat4 modelMatrix;      // models send their own model matrices when drawn
@@ -30,6 +31,7 @@ vec4 position(mat4 transformProjection, vec4 vertexPosition) {
 	// float cosPitch = sin(cameraRight.z);
 	// vec3 cameraUp = vec3(cameraRight.y*cosPitch,-cameraRight.x*cosPitch,-cos(cameraRight.z));
 	// vec3 cameraForward = -cross(vec3(cameraRight.xy,0), cameraUp);
+    cameraForward = normalize(InstancePosition.xyz + translation);
     viewPosition = viewMatrix * (InstancePosition.xyz + translation);
 	viewPosition.xy += vertexPosition.xy * (InstancePosition.w+1);
     screenPosition = projectionMatrix * vec4(viewPosition,1);

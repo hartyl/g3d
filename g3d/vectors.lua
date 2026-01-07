@@ -30,7 +30,7 @@ function vectors.dotProduct(a1,a2,a3, b1,b2,b3)
 end
 
 function vectors.normalize(x,y,z)
-    local mag = math.sqrt(x^2 + y^2 + z^2)
+    local mag = (x^2 + y^2 + z^2)^.5
     if mag ~= 0 then
         return x/mag, y/mag, z/mag
     else
@@ -39,7 +39,7 @@ function vectors.normalize(x,y,z)
 end
 
 function vectors.magnitude(x,y,z)
-    return math.sqrt(x^2 + y^2 + z^2)
+    return (x^2 + y^2 + z^2)^.5
 end
 
 return vectors
